@@ -235,3 +235,79 @@ plt.tight_layout()
 plt.show()
 ```
 
+```{python}
+# Cross-validate Ridge
+r_lambda_grid = 10**np.linspace(10, -2, 100)
+best_ridge_alpha, ridge_scores = cross_validate_model(Ridge, X_train_s, y_train, r_lambda_grid, cv_folds=5, max_iter=10000)
+print(f"\nBest Ridge alpha: {best_ridge_alpha:.4f}")
+print(f"Best CV MSE: {ridge_scores[best_ridge_alpha]:.4f}")
+```
+
+```{python}
+# Plot CV scores for Ridge
+alphas_ridge = list(ridge_scores.keys())
+mses_ridge = [ridge_scores[a] for a in alphas_ridge]
+plt.figure(figsize=(8, 5))
+plt.semilogx(alphas_ridge, mses_ridge, marker="o")
+plt.axvline(best_ridge_alpha, color="red", linestyle="--", 
+            label=f"Best alpha={best_ridge_alpha:.4f}")
+plt.xlabel("Alpha")
+plt.ylabel("Mean CV MSE")
+plt.title("Ridge Regression: Cross-Validation MSE vs Alpha")
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+# Train Ridge with best alpha
+ridge = Ridge(alpha=best_ridge_alpha, max_iter=10000)
+ridge.fit(X_train_s, y_train)
+ridge_test_pred = ridge.predict(X_test_s)
+results["Ridge"] = evaluate_and_report("Ridge Test", y_test, ridge_test_pred)
+```
+
+```{python}
+# Residual plots for Ridge
+residuals_ridge = y_test - ridge_test_pred
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.scatter(ridge_test_pred, residuals_ridge, alpha=0.5)
+plt.axhline(0, color="red", linestyle="--")
+plt.xlabel("Predicted")
+plt.ylabel("Residual")
+plt.title("Ridge - Residuals vs Predicted")
+plt.subplot(1, 2, 2)
+plt.hist(residuals_ridge, bins=30, edgecolor="black", alpha=0.7)
+plt.xlabel("Residual")
+plt.title("Ridge - Residual Distribution")
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+# Cross-validate Lasso
+lasso_lambda_grid = 10**np.linspace(10, -2, 100)
+best_lasso_alpha, lasso_scores = cross_validate_model(Lasso, X_train_s, y_train, lasso_lambda_grid, cv_folds=5, max_iter=10000)
+print(f"\nBest Lasso alpha: {best_lasso_alpha:.4f}")
+print(f"Best CV MSE: {lasso_scores[best_lasso_alpha]:.4f}")
+```
+
+```{python}
+# Plot CV scores for Lasso
+alphas_lasso = list(lasso_scores.keys())
+mses_lasso = [lasso_scores[a] for a in alphas_lasso]
+plt.figure(figsize=(8, 5))
+plt.semilogx(alphas_lasso, mses_lasso, marker="o", color="green")
+plt.axvline(best_lasso_alpha, color="red", linestyle="--", 
+            label=f"Best alpha={best_lasso_alpha:.4f}")
+plt.xlabel("Alpha (log scale)")
+plt.ylabel("Mean CV MSE")
+plt.title("Lasso Regression: Cross-Validation MSE vs Alpha")
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+```
+
