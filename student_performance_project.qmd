@@ -1,0 +1,6 @@
+---
+title: "Predicting Student Exam Scores using Machine Learning Models"
+author: "Mba Solomon Akachukwu"
+date: "15th December 2025"
+format: pdf
+---
