@@ -13,3 +13,171 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.preprocessing import StandardScaler
 ```
+
+```{python}
+def calculate_mse(y_true, y_pred):
+    """Calculate MSE"""
+    return float(np.mean((y_true - y_pred) ** 2))
+
+def calculate_rmse(y_true, y_pred):
+    """Calculate RMSE"""
+    return float(np.sqrt(calculate_mse(y_true, y_pred)))
+
+def calculate_mae(y_true, y_pred):
+    """Calculate Mean Absolute Error"""
+    return float(np.mean(np.abs(y_true - y_pred)))
+
+def calculate_r2(y_true, y_pred):
+    """Calculate R-squared"""
+    ss_res = np.sum((y_true - y_pred) ** 2)
+    ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
+    return float(1 - ss_res / ss_tot) if ss_tot > 0 else 0.0
+```
+
+```{python}
+df = pd.read_csv("StudentPerformanceFactors.csv") 
+print("\nFirst few rows:")
+print(df.head())
+```
+
+```{python}
+print(f"Shape: {df.shape}")
+print(f"\nColumn types:")
+print(df.dtypes)
+print(f"\nMissing values (count):")
+print(df.isnull().sum())
+```
+
+```{python}
+quantitative = [
+    "Hours_Studied",
+    "Attendance",
+    "Sleep_Hours",
+    "Previous_Scores",
+    "Tutoring_Sessions",
+    "Physical_Activity",
+    "Exam_Score",
+]
+available_quant = []
+for c in quantitative:
+    if c in df.columns:
+        available_quant.append(c)
+print("\nSummary quantitative statistics:")
+print(df[available_quant].describe())
+```
+
+## Data Preprocessing
+
+```{python}
+# Handle missing values
+df_proc = df.copy()
+df_proc.replace("", np.nan, inplace=True)
+
+target_col = "Exam_Score"
+numeric_cols = [
+    "Hours_Studied",
+    "Attendance",
+    "Sleep_Hours",
+    "Previous_Scores",
+    "Tutoring_Sessions",
+    "Physical_Activity",
+]
+categorical_cols = [
+    "Parental_Involvement",
+    "Access_to_Resources",
+    "Extracurricular_Activities",
+    "Motivation_Level",
+    "Internet_Access",
+    "Family_Income",
+    "Teacher_Quality",
+    "School_Type",
+    "Peer_Influence",
+    "Learning_Disabilities",
+    "Parental_Education_Level",
+    "Distance_from_Home",
+    "Gender",
+]
+
+for col in df_proc.columns:
+    if df_proc[col].isnull().any():
+        if col in numeric_cols:
+            median_val = df_proc[col].median()
+            df_proc[col].fillna(median_val, inplace=True)
+        elif col != target_col:
+            mode_val = df_proc[col].mode()[0]
+            df_proc[col].fillna(mode_val, inplace=True)
+
+y = df_proc[target_col].values.astype(float)
+X_df = df_proc.drop(columns=[target_col])
+
+# One-hot encode categoricals
+X_encoded = pd.get_dummies(X_df, columns=categorical_cols, drop_first=True)
+feature_names = X_encoded.columns.tolist()
+X = X_encoded.values.astype(float)
+
+print(f"\nFeatures after encoding: {X.shape[1]}")
+```
+
+## Exploratory Data Visualizations
+
+```{python}
+# Histogram of Exam_Score
+plt.figure(figsize=(8, 5))
+plt.hist(df["Exam_Score"], bins=30, alpha=0.7)
+plt.xlabel("Exam Score")
+plt.ylabel("Frequency")
+plt.title("Distribution of Exam Scores")
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+# Scatterplots vs Exam_Score
+if "Hours_Studied" in df.columns:
+    plt.figure(figsize=(7, 5))
+    plt.scatter(df["Hours_Studied"], df["Exam_Score"], alpha=0.5)
+    corr = np.corrcoef(df["Hours_Studied"], df["Exam_Score"])[0, 1]
+    plt.xlabel("Hours_Studied")
+    plt.ylabel("Exam Score")
+    plt.title(f"Hours_Studied vs Exam Score (r={corr:.3f})")
+    plt.tight_layout()
+    plt.show()
+```
+
+```{python}
+# Correlation heatmap for quantitative variables
+quant_cols = [
+    "Hours_Studied",
+    "Attendance",
+    "Sleep_Hours",
+    "Previous_Scores",
+    "Tutoring_Sessions",
+    "Physical_Activity",
+    "Exam_Score",
+]
+quant_cols = [c for c in quant_cols if c in df.columns]
+corr = df[quant_cols].corr()
+plt.figure(figsize=(8, 6))
+sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm", square=True)
+plt.title("Correlation Heatmap for Quantitative Features")
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+def cross_validate_model(model_class, X, y, lambdas, cv_folds=5, max_iter=10000):
+    kf = KFold(n_splits=cv_folds, shuffle=True, random_state=123)
+    scores = {}
+    for lam in lambdas:
+        fold_mse = []
+        for train_idx, val_idx in kf.split(X):
+            Xtr, Xval = X[train_idx], X[val_idx]
+            ytr, yval = y[train_idx], y[val_idx]
+            model = model_class(alpha=lam, max_iter=max_iter)
+            model.fit(Xtr, ytr)
+            preds = model.predict(Xval)
+            fold_mse.append(calculate_mse(yval, preds))
+        scores[lam] = float(np.mean(fold_mse))
+    best_lam = min(scores, key=scores.get)
+    return best_lam, scores
+```
