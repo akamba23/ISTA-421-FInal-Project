@@ -181,3 +181,57 @@ def cross_validate_model(model_class, X, y, lambdas, cv_folds=5, max_iter=10000)
     best_lam = min(scores, key=scores.get)
     return best_lam, scores
 ```
+
+```{python}
+# Set random seed for reproducibility
+np.random.seed(42)
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=123
+)
+print(f"Training set: {X_train.shape[0]} samples")
+print(f"Test set: {X_test.shape[0]} samples")
+# Standardize features
+X_train_mean = np.mean(X_train, axis=0)
+X_train_std = np.std(X_train, axis=0)
+X_train_s = (X_train - X_train_mean) / X_train_std
+X_test_s = (X_test - X_train_mean) / X_train_std
+```
+
+```{python}
+def evaluate_and_report(name, y_true, y_pred):
+    mse = calculate_mse(y_true, y_pred)
+    rmse = calculate_rmse(y_true, y_pred)
+    mae = calculate_mae(y_true, y_pred)
+    r2 = calculate_r2(y_true, y_pred)
+    print(f"\n{name} performance:")
+    print(f"  MSE : {mse:.4f}")
+    print(f"  RMSE: {rmse:.4f}")
+    print(f"  MAE : {mae:.4f}")
+    print(f"  R^2 : {r2:.4f}")
+    return {"MSE": mse, "RMSE": rmse, "MAE": mae, "R2": r2}
+
+results = {}
+```
+
+```{python}
+ols = LinearRegression()
+ols.fit(X_train_s, y_train)
+ols_test_pred = ols.predict(X_test_s)
+results["OLS"] = evaluate_and_report("OLS Test", y_test, ols_test_pred)
+residuals_ols = y_test - ols_test_pred
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.scatter(ols_test_pred, residuals_ols, alpha=0.5)
+plt.axhline(0, color="red", linestyle="--")
+plt.xlabel("Predicted")
+plt.ylabel("Residual")
+plt.title("OLS - Residuals vs Predicted")
+plt.subplot(1, 2, 2)
+plt.hist(residuals_ols, bins=30, edgecolor="black", alpha=0.7)
+plt.xlabel("Residual")
+plt.title("OLS - Residual Distribution")
+plt.tight_layout()
+plt.show()
+```
+
