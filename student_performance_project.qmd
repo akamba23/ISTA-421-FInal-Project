@@ -188,7 +188,7 @@ def cross_validate_model(model_class, X, y, lambdas, cv_folds=5, max_iter=10000)
 np.random.seed(42)
 # Train-test split
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=123
+    X, y, test_size=0.3, random_state=123
 )
 print(f"Training set: {X_train.shape[0]} samples")
 print(f"Test set: {X_test.shape[0]} samples")
