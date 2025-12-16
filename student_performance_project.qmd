@@ -311,3 +311,29 @@ plt.tight_layout()
 plt.show()
 ```
 
+```{python}
+# Train Lasso with best alpha
+lasso = Lasso(alpha=best_lasso_alpha, max_iter=10000)
+lasso.fit(X_train_s, y_train)
+lasso_test_pred = lasso.predict(X_test_s)
+results["Lasso"] = evaluate_and_report("Lasso (Test)", y_test, lasso_test_pred)
+```
+
+```{python}
+# Residual plots for Lasso
+residuals_lasso = y_test - lasso_test_pred
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.scatter(lasso_test_pred, residuals_lasso, alpha=0.5)
+plt.axhline(0, color="red", linestyle="--")
+plt.xlabel("Predicted")
+plt.ylabel("Residual")
+plt.title("Lasso - Residuals vs Predicted")
+plt.subplot(1, 2, 2)
+plt.hist(residuals_lasso, bins=30, edgecolor="black", alpha=0.7)
+plt.xlabel("Residual")
+plt.title("Lasso - Residual Distribution")
+plt.tight_layout()
+plt.show()
+```
+
